@@ -1,0 +1,12 @@
+---
+repos:
+  - repo: https://github.com/aws-cloudformation/cfn-python-lint
+    rev: v0.29.6
+    hooks:
+      - id: cfn-python-lint
+        files: templates/.*\.yml$
+  - repo: https://github.com/adrienverge/yamllint.git
+    rev: v1.23.0
+    hooks:
+      - id: yamllint
+
