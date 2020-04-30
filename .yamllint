@@ -4,4 +4,3 @@ extends: default
 rules:
   document-start: {present: true}
   empty-lines: disable
-
