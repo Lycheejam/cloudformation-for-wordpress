@@ -1,0 +1,26 @@
+{
+  "StackName": "rds-for-wordpress",
+  "Parameters": [
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "development"
+    },
+    {
+      "ParameterKey": "RdsInstanceName",
+      "ParameterValue": "sample-db"
+    },
+    {
+      "ParameterKey": "RdsMasterUserName",
+      "ParameterValue": "admin"
+    },
+    {
+      "ParameterKey": "RdsMasterUserPassword",
+      "ParameterValue": ""
+    },
+    {
+      "ParameterKey": "MyHostedZoneName",
+      "ParameterValue": ""
+    }
+  ],
+  "ChangeSetName": "change-set"
+}

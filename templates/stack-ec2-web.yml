@@ -1,0 +1,75 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: web ec2 instance stack"
+
+Parameters:
+  Environment:
+    Type: String
+    Description: prefix tag
+    Default: development
+  AmiImageId:
+    Type: AWS::EC2::Image::Id
+    Description: instance ami image id
+    Default: ami-0af1df87db7b650f4
+  InstanceType:
+    Type: String
+    Description: instance type
+    Default: t2.micro
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: key pair name
+
+  # availability zone parameter
+  AvailabilityZoneA:
+    Type: String
+    Default: a
+
+  MyHostedZoneName:
+    Type: String
+    Description: my domain
+    Default: example.com
+  MySubDomainName:
+    Type: String
+    Description: subdomain prefix
+    Default: wordpress
+
+Resources:
+  WebInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPairName
+      SecurityGroupIds:
+        - Fn::ImportValue: WebSecurityGroup
+      SubnetId:
+        Fn::ImportValue: !Join ['-', [!Ref Environment, subnet-public, !Ref AvailabilityZoneA]]
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, web, !Ref AvailabilityZoneA]]
+
+  ElasticIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref WebInstance
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, web-eip, !Ref AvailabilityZoneA]]
+
+  SubDomainRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Join ['.', [!Ref MySubDomainName, !Ref MyHostedZoneName]]
+      Comment: domain for wordpress
+      Type: A
+      TTL: 300
+      HostedZoneName: !Join ['', [!Ref MyHostedZoneName, '.']]
+      ResourceRecords: 
+      - !Ref ElasticIp
+
+Outputs:
+  WebInstance:
+    Value: !Ref WebInstance
+    Export:
+      Name: !Join ['', [!Ref Environment, web, !Ref AvailabilityZoneA]]

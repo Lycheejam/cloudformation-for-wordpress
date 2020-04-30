@@ -1,0 +1,26 @@
+{
+  "StackName": "vpc-for-wordpress",
+  "Parameters": [
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "development"
+    },
+    {
+      "ParameterKey": "VpcCidr",
+      "ParameterValue": "10.1.0.0/16"
+    },
+    {
+      "ParameterKey": "PublicSubnetCidr",
+      "ParameterValue": "10.1.1.0/24"
+    },
+    {
+      "ParameterKey": "PrivateDbSubnetCidrA",
+      "ParameterValue": "10.1.11.0/24"
+    },
+    {
+      "ParameterKey": "PrivateDbSubnetCidrC",
+      "ParameterValue": "10.1.12.0/24"
+    }
+  ],
+  "ChangeSetName": "change-set"
+}

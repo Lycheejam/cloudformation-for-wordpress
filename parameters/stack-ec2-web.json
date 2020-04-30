@@ -1,0 +1,22 @@
+{
+  "StackName": "web-ec2-for-wordpress",
+  "Parameters": [
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "development"
+    },
+    {
+      "ParameterKey": "KeyPairName",
+      "ParameterValue": ""
+    },
+    {
+      "ParameterKey": "MyHostedZoneName",
+      "ParameterValue": ""
+    },
+    {
+      "ParameterKey": "MySubDomainName",
+      "ParameterValue": "wordpress"
+    }
+  ],
+  "ChangeSetName": "change-set"
+}

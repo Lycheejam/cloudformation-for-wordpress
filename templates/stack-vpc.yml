@@ -1,0 +1,160 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC and network stack"
+
+Parameters:
+  Environment:
+    Type: String
+    Description: prefix tag
+    Default: development
+
+  VpcCidr:
+    Type: String
+    Description: CIDR block should be used to create the VPC (e.g. 172.21.1.0/24)
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{2})"
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x. (e.g. 172.21.1.0/24)
+
+  # public subnet parameter for web server
+  PublicSubnetCidr:
+    Type: String
+    Description: CIDR block should be used to create the VPC (e.g. 172.21.1.0/24)
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{2})"
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x. (e.g. 172.21.1.0/24)
+
+  # private subnet parameter for database
+  PrivateDbSubnetCidrA:
+    Type: String
+    Description: CIDR block should be used to create the VPC (e.g. 172.21.1.0/24)
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{2})"
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x. (e.g. 172.21.1.0/24)
+  PrivateDbSubnetCidrC:
+    Type: String
+    Description: CIDR block should be used to create the VPC (e.g. 172.21.1.0/24)
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{2})"
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x. (e.g. 172.21.1.0/24)
+
+  # availability zone parameter
+  AvailabilityZoneA:
+    Type: String
+    Default: a
+  AvailabilityZoneC:
+    Type: String
+    Default: c
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, vpc]]
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Join ['', [!Ref 'AWS::Region', !Ref AvailabilityZoneA]]
+      CidrBlock: !Ref PublicSubnetCidr
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, subnet-public, !Ref AvailabilityZoneA]]
+      VpcId: !Ref Vpc
+
+  # private db subnet zone
+  PrivateDbSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Join ['', [!Ref 'AWS::Region', !Ref AvailabilityZoneA]]
+      CidrBlock: !Ref PrivateDbSubnetCidrA
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, subnet-private-db, !Ref AvailabilityZoneA]]
+      VpcId: !Ref Vpc
+  PrivateDbSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Join ['', [!Ref 'AWS::Region', !Ref AvailabilityZoneC]]
+      CidrBlock: !Ref PrivateDbSubnetCidrC
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, subnet-private-db, !Ref AvailabilityZoneC]]
+      VpcId: !Ref Vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, igw]]
+  InternetGatewayAttach:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref Vpc
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, rt-public]]
+      VpcId: !Ref Vpc
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn:
+      - InternetGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
+  SubnetRouteTableAssociationPublic:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, rt-private]]
+      VpcId: !Ref Vpc
+  SubnetRouteTableAssociationPrivateDbA:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateDbSubnetA
+      RouteTableId: !Ref PrivateRouteTable
+  SubnetRouteTableAssociationPrivateDbC:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateDbSubnetC
+      RouteTableId: !Ref PrivateRouteTable
+
+Outputs:
+  VpcId:
+    Description: VPC ID
+    Value: !Ref Vpc
+    Export:
+      Name: !Join ['-', [!Ref Environment, vpc]]
+  PublicSubnet:
+    Description: Subnet ID of Public
+    Value: !Ref PublicSubnet
+    Export:
+      Name: !Join ['-', [!Ref Environment, subnet-public, !Ref AvailabilityZoneA]]
+  PrivateDbSubnetA:
+    Description: Subnet ID of Private db
+    Value: !Ref PrivateDbSubnetA
+    Export:
+      Name: !Join ['-', [!Ref Environment, subnet-private-db, !Ref AvailabilityZoneA]]
+  PrivateDbSubnetC:
+    Description: Subnet ID of Private db
+    Value: !Ref PrivateDbSubnetC
+    Export:
+      Name: !Join ['-', [!Ref Environment, subnet-private-db, !Ref AvailabilityZoneC]]

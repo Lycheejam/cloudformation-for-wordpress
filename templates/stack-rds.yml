@@ -1,0 +1,95 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: rds stack
+
+Parameters:
+  Environment:
+    Type: String
+    Description: prefix tag
+    Default: development
+  RdsStorageSize:
+    Type: String
+    Description: rds strage size
+    Default: '20'
+  BackupRetentionPeriod:
+    Type: Number
+    Description: backup retention period
+    Default: 0
+  RdsInstanceType:
+    Type: String
+    Description: rds instance type
+    Default: db.t2.micro
+  RdsInstanceName:
+    Type: String
+    Description: rds instance name
+  IsDeleteAutomatedBackups:
+    Type: String
+    Description: rds backup automatic delete
+    Default: true
+  IsDeletionProtection:
+    Type: String
+    Description: rds delete protection
+    Default: true
+  MySQLVersion:
+    Type: String
+    Description: rds delete protection
+    Default: '5.7.22'
+  RdsMasterUserName:
+    NoEcho: true
+    Type: String
+    Description: rds master user name
+  RdsMasterUserPassword:
+    NoEcho: true
+    Type: String
+    Description: rds master user password
+  MyHostedZoneName:
+    Type: String
+    Description: my domain
+    Default: example.com
+
+Resources:
+  RdsSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: rds subnet group
+      DBSubnetGroupName: !Join ['-', [!Ref Environment, rds-sg]]
+      SubnetIds:
+        - Fn::ImportValue: !Join ['-', [!Ref Environment, subnet-private-db-a]]
+        - Fn::ImportValue: !Join ['-', [!Ref Environment, subnet-private-db-c]]
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, rds-sg]]
+
+  RdsInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: !Ref RdsStorageSize
+      AllowMajorVersionUpgrade: false
+      AutoMinorVersionUpgrade: false
+      BackupRetentionPeriod: !Ref BackupRetentionPeriod
+      DBInstanceClass: !Ref RdsInstanceType
+      DBInstanceIdentifier: !Ref RdsInstanceName
+      DBSubnetGroupName: !Ref RdsSubnetGroup
+      DeleteAutomatedBackups: !Ref IsDeleteAutomatedBackups
+      DeletionProtection: !Ref IsDeletionProtection
+      Engine: MySQL
+      EngineVersion: !Ref MySQLVersion
+      MasterUsername: !Ref RdsMasterUserName
+      MasterUserPassword: !Ref RdsMasterUserPassword
+      MultiAZ: false
+      StorageType: gp2
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref Environment, rds]]
+      VPCSecurityGroups:
+        - !ImportValue RdsSecurityGroup
+
+  DBRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Join ['', [!Ref MyHostedZoneName, '.']]
+      Name: !Join ['.', [!Ref RdsInstanceName, !Ref MyHostedZoneName]]
+      Type: CNAME
+      TTL: '60'
+      ResourceRecords:
+        - !GetAtt RdsInstance.Endpoint.Address
