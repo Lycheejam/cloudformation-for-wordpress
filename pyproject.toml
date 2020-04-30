@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "my-cfn-templates"
+name = "cloudformation-for-wordpress"
 version = "0.1.0"
 description = ""
 authors = ["Lycheejam <lycheejamwow@gmail.com>"]
