@@ -1,0 +1,14 @@
+{
+  "StackName": "security-group-for-wordpress",
+  "Parameters": [
+    {
+      "ParameterKey": "Environment",
+      "ParameterValue": "development"
+    },
+    {
+      "ParameterKey": "HomeCIDR",
+      "ParameterValue": ""
+    }
+  ],
+  "ChangeSetName": "change-set"
+}
